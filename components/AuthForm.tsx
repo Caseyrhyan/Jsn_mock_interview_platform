@@ -19,6 +19,9 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input"
 import { useRouter } from "next/navigation";
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
+import { auth } from "@/Firebase/Client";
+import { signIn, signUp } from "@/lib/actions/auth.action";
 type FormType = "sign-in" | "sign-up";
 
 const formSchema = z.object({
@@ -38,13 +41,46 @@ const AuthForm = ({ type }: { type: FormType }) => {
     },
   });
 
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
       if (type === "sign-up") {
+           const { username, email, password } = values;
+  
+           const userCredentails = await createUserWithEmailAndPassword(auth, email, password);
+
+           const result = await signUp({
+               uid: userCredentails.user.uid,
+               username: username!,
+               email,
+               password,
+           })
+
+
+           if(!result.success) {
+            toast.error(result.message);
+            return;
+           }
+
         toast.success('Account created successfully. Please sign in.');
         router.push('/sign-in')
          
       } else {
+          const { email, password } = values;
+
+          const userCredentails = await signInWithEmailAndPassword(auth ,email, password);
+
+          const idToken = await userCredentails.user.getIdToken();
+
+          if(!idToken) {
+            toast.error('Sign in failed')
+            return;
+          }
+
+          await signIn({
+            email,idToken
+          })
+
+
         toast.success('Sign in successfully.');
         router.push('/')
       }
@@ -54,7 +90,7 @@ const AuthForm = ({ type }: { type: FormType }) => {
     }
   };
 
-  const isSignUp = type === "sign-up";
+  const isSignIn = type === "sign-in";
 
   return (
     <div className="card-border lg:min-w-[566px]">
@@ -62,7 +98,7 @@ const AuthForm = ({ type }: { type: FormType }) => {
         {/* Logo Section */}
         <div className="flex flex-row gap-2 justify-center">
           <Image src="/logo.svg" alt="logo" height={32} width={38} />
-          <h2 className="text-primary-100 text-xl font-bold">PrepWise</h2>
+          <h2 className="text-primary-100 text-xl font-bold">VocaPrep</h2>
         </div>
 
         <h3 className="text-lg text-center">Practice job interviews with AI</h3>
@@ -71,7 +107,7 @@ const AuthForm = ({ type }: { type: FormType }) => {
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="w-full space-y-6 mt-4">
             {/* Show username only for sign-up */}
-            {isSignUp && (
+            {!isSignIn && (
               <FormField
                 control={form.control}
                 name="username"
@@ -119,19 +155,19 @@ const AuthForm = ({ type }: { type: FormType }) => {
 
             {/* Submit Button */}
             <Button type="submit" className="w-full">
-              {isSignUp ? "Create an Account" : "Sign In"}
+              {!isSignIn ? "Create an Account" : "Sign In"}
             </Button>
           </form>
         </Form>
 
         {/* Switch between Sign In / Sign Up */}
         <p className="text-center text-sm">
-          {isSignUp ? "Already have an account?" : "Don't have an account?"}{" "}
+          {isSignIn ? "Already have an account?" : "Don't have an account?"}{" "}
           <Link
-            href={isSignUp ? "/sign-in" : "/sign-up"}
+            href={!isSignIn ? "/sign-in" : "/sign-up"}
             className="font-bold text-user-primary ml-1"
           >
-            {isSignUp ? "Sign in" : "Sign up"}
+            {!isSignIn ? "Sign in" : "Sign up"}
           </Link>
         </p>
       </div>

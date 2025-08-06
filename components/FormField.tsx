@@ -2,23 +2,23 @@
 import React from "react";
 import { Control, Controller, FieldValues, Path } from "react-hook-form";
 import { Input } from "@/components/ui/input";
-import { FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
+import { FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form";
 
-interface UsernameFieldProps<T extends FieldValues> {
+interface FormFieldProps<T extends FieldValues> {
   control: Control<T>;
   name: Path<T>;
   label: string;
   placeholder?: string;
-  type?: string;
+  type?: 'text' | 'email' | 'password' | 'file';
 }
 
-const UsernameField = <T extends FieldValues>({
+export default function FormField <T extends FieldValues>({
   control,
   name,
   label,
   placeholder,
   type = "text",
-}: UsernameFieldProps<T>) => {
+}: FormFieldProps<T>) {
   return (
     <Controller
       control={control}
@@ -41,5 +41,5 @@ const UsernameField = <T extends FieldValues>({
   );
 };
 
-export default UsernameField;
+// export default FormField;
 
