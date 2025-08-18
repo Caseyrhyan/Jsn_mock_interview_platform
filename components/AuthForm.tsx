@@ -22,6 +22,7 @@ import { useRouter } from "next/navigation";
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "@/Firebase/Client";
 import { signIn, signUp } from "@/lib/actions/auth.action";
+
 type FormType = "sign-in" | "sign-up";
 
 const formSchema = z.object({
