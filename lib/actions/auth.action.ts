@@ -9,7 +9,7 @@ export async function signUp(params: signUpParams) {
 
     try {
         const userRecord = await db.collection('users').doc(uid).get();
-        
+
         if(userRecord.exists){
             return{
                 success: false,
@@ -37,8 +37,8 @@ export async function signUp(params: signUpParams) {
     }
 
     return {
-       success: false,
-       message: 'Failed to create an account'
+    success: false,
+    message: 'Failed to create an account'
     }
 }
 // Define SignInParams type
@@ -62,12 +62,12 @@ export async function signIn(params: SignInParams) {
 
         await setSessionCookie(idToken)
     }catch (e) {
-         console.log(e);
+        console.log(e);
 
-         return {
+        return {
             success: false,
             message: 'Failed to sign in into an account'
-         }
+        }
     }
 
 }
@@ -78,7 +78,7 @@ export async function setSessionCookie(idToken: string) {
         const sessionCookie = await auth.createSessionCookie(idToken, {
              expiresIn: ONE_WEEK * 1000,
         });
-    
+
         cookiestore.set('session', sessionCookie, {
             maxAge: ONE_WEEK,
             httpOnly: true,
@@ -106,7 +106,7 @@ export async function getCurrentUser(): Promise<AppUser | null> {
     if (!sessionCookie) return null;
 
     try {
-        const decodedClaims = await auth.verifySessionCookie(sessionCookie, true); 
+        const decodedClaims = await auth.verifySessionCookie(sessionCookie, true);
 
         const userRecord = await db.
             collection('users')
