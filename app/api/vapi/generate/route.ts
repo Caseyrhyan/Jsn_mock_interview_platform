@@ -1,5 +1,7 @@
 import { db } from "@/Firebase/admin";
 import { getRandomInterviewCover } from "@/lib/utils";
+import {google} from "@ai-sdk/google";
+import { generateText} from "ai";
 
 
 export async function GET() {
@@ -11,7 +13,7 @@ export async function POST(request: Request) {
 
     try {
         const { text: questions } = await generateText({
-            model: google('gemini-2,0-flash-001'),
+            model: google('gemini-2.0-flash-001'),
             prompt:  `Prepare questions for a job interview.
         The job role is ${role}.
         The job experience level is ${level}.
@@ -49,10 +51,3 @@ export async function POST(request: Request) {
     }
 }
 
-function generateText(arg0: { model: any; prompt: string; }): { text: any; } | PromiseLike<{ text: any; }> {
-    throw new Error("Function not implemented.");
-}
-
-
- 
- 
