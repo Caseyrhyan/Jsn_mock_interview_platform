@@ -11,12 +11,27 @@
 
 import InterviewCard from '@/components/interviewCard'
 import { Button } from '@/components/ui/button'
+import { getCurrentUser, getLatestInterviews } from '@/lib/actions/auth.action';
 import { dummyInterviews } from '@/public/constants'
 import Image from 'next/image'
 import Link from 'next/link'
 import React from 'react'
 
-const page = () => {
+const page = async () => {
+    const user = await getCurrentUser();
+
+    const [userInterviews, latestInterviews] = await Promise.all([
+      await getInterviewsByUserId(user?.id),
+      await getLatestInterviews({ userId: user?.id! })
+    ]);
+
+
+    
+
+    const haspastInterviews = userInterviews ?. length > 0;
+    const hasUpcomingInterviews = latestInterviews ?. length > 0;
+
+
   return (
     <>
         <section className="card-cta">
@@ -38,9 +53,13 @@ const page = () => {
           <h2>Your Interviews</h2>
 
           <div className="interviews-section">
-               {dummyInterviews.map((interview, index) => (
-                  <InterviewCard {...interview} key={index} />
-               ))}
+            {haspastInterviews ? (
+              userInterviews?.map((interview, index) => (
+                <InterviewCard {...interview} key={index} />
+              ))
+            ) : (
+              <p>You haven&apos;t taken any interviews yet</p>
+            )}
           </div>
           </section> 
 
@@ -61,3 +80,7 @@ const page = () => {
 }
 
 export default page
+
+function getInterviewsByUserId(id: string | undefined) {
+  throw new Error('Function not implemented.')
+}

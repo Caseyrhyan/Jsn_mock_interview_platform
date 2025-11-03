@@ -26,4 +26,10 @@ interface SignUpParams {
 
 type FormType = "sign-in" | "sign-up";
 
+interface Message {
+  type: 'transcript';
+  transcriptType: 'final' | 'interim';
+  role: 'user' | 'assistant' | 'system';
+  transcript: string;
+}
 
