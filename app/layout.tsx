@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Mona_Sans } from "next/font/google";
 
+// @ts-ignore: CSS module side-effect import type declarations
 import "./globals.css";
 import { Toaster } from "sonner";
 

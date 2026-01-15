@@ -2,6 +2,14 @@
 
 import { auth, db } from "@/Firebase/admin";
 import { cookies } from "next/headers";
+import { interview } from "./type/interview";
+
+type signUpParams = {
+    uid: string;
+    username: string;
+    email: string;
+    password: string;
+};
 
 const ONE_WEEK = 60 * 60 * 24 * 7;
 export async function signUp(params: signUpParams) {
@@ -47,30 +55,40 @@ type SignInParams = {
     idToken: string;
 };
 
+// Define GetLatestInterviewsParams type
+type GetLatestInterviewsParams = {
+    userId: string;
+    limit?: number;
+};
+
 export async function signIn(params: SignInParams) {
-    const { email, idToken } = params;
+  const { email, idToken } = params;
 
-    try{
-        const userRecord = await auth.getUserByEmail(email);
+  try {
+    const userRecord = await auth.getUserByEmail(email);
 
-        if(!userRecord) {
-            return {
-                success: false,
-                message: 'User does not exist. Create an account instead'
-            }
-        }
-
-        await setSessionCookie(idToken)
-    }catch (e) {
-        console.log(e);
-
-        return {
-            success: false,
-            message: 'Failed to sign in into an account'
-        }
+    if (!userRecord) {
+      return {
+        success: false,
+        message: "User does not exist. Create an account instead",
+      };
     }
 
+    await setSessionCookie(idToken);
+
+    return {
+      success: true,
+    };
+  } catch (e) {
+    console.error(e);
+    return {
+      success: false,
+      message: "Failed to log into an account",
+    };
+  }
 }
+
+
 
 export async function setSessionCookie(idToken: string) {
     const cookiestore = await cookies();
@@ -90,15 +108,15 @@ export async function setSessionCookie(idToken: string) {
 
 
 
-// Define AppUser type (customize fields as needed)
-type AppUser = {
+
+type User = {
     id: string;
     username: string;
     email: string;
     // add other fields if needed
 };
 
-export async function getCurrentUser(): Promise<AppUser | null> {
+export async function getCurrentUser(): Promise<User | null> {
     const cookieStore = await cookies();
 
     const sessionCookie = cookieStore.get('session')?.value;
@@ -118,7 +136,7 @@ export async function getCurrentUser(): Promise<AppUser | null> {
         return {
             ...userRecord.data(),
             id: userRecord.id,
-        } as AppUser;
+        } as User;
     } catch(e) {
         console.log(e)
 
@@ -130,4 +148,38 @@ export async function isAuthenticated() {
     const user = await getCurrentUser();
 
     return !!user; 
+}
+
+export async function getInterviewsByUserId(userId: string): Promise<interview[] | null> {
+
+  if(!userId) return null;
+
+        const interviews = await db
+            .collection('interviews')
+            .where('userId', '==', userId)
+            .orderBy('createdAt', 'desc')
+            .get();
+
+        return interviews.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data()
+        })) as interview[];
+}
+
+
+export async function getLatestInterviews(params: GetLatestInterviewsParams): Promise<interview[] | null> {
+        const { userId, limit = 20} = params;
+
+        if(!userId) return null;
+        const interviews = await db
+            .collection('interviews')
+            .where('userId', '!=', userId)
+            .orderBy('createdAt', 'desc')
+            .limit(limit)
+            .get();
+
+        return interviews.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data()
+        })) as interview[];
 }

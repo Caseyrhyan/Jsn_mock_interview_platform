@@ -27,7 +27,7 @@ import { useState } from "react";
 type FormType = "sign-in" | "sign-up";
 
 const formSchema = z.object({
-  username: z.string().min(2).max(50).optional(), // Optional for sign-in
+  username: z.string().min(2).max(50).optional(),
   email: z.string().email({ message: "Enter a valid email" }),
   password: z.string().min(6, { message: "Password must be at least 6 characters" }),
 });
@@ -36,17 +36,32 @@ const AuthForm = ({ type }: { type: FormType }) => {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  // Create schema based on form type
+  const validationSchema = type === "sign-up" 
+    ? z.object({
+        username: z.string().min(2, "Username must be at least 2 characters").max(50),
+        email: z.string().email({ message: "Enter a valid email" }),
+        password: z.string().min(6, { message: "Password must be at least 6 characters" }),
+      })
+    : z.object({
+        username: z.string().optional(),
+        email: z.string().email({ message: "Enter a valid email" }),
+        password: z.string().min(6, { message: "Password must be at least 6 characters" }),
+      });
+
+  const form = useForm<z.infer<typeof validationSchema>>({
+    resolver: zodResolver(validationSchema),
     defaultValues: {
       username: "",
       email: "",
       password: "",
     },
+    mode: "onBlur",
   });
 
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+  const onSubmit = async (values: z.infer<typeof validationSchema>) => {
     setIsLoading(true);
+
 
     try {
       if (type === "sign-up") {
@@ -65,19 +80,21 @@ const AuthForm = ({ type }: { type: FormType }) => {
 
         console.log("SignUp result:", result);
 
-        if (!result.success) {
-          toast.error(result.message);
+        if (!result?.success) {
+          toast.error(result?.message);
           return;
         }
 
-        toast.success('Account created successfully.');
-        router.push('/home');
+        toast.success('Account created successfully. Please sign in.');
+        router.push('/sign-in');
 
       } else {
-        console.log("Attempting sign in with:", { email: values.email });
+        console.log("Attempting sign in with:",{ email: values.email});
+
 
         const { email, password } = values;
         const userCredentials = await signInWithEmailAndPassword(auth, email, password);
+
 
         console.log("Firebase sign in successful:", userCredentials.user.uid);
 
@@ -85,7 +102,7 @@ const AuthForm = ({ type }: { type: FormType }) => {
         console.log("ID Token obtained:", !!idToken);
 
         if (!idToken) {
-          toast.error('Failed to get ID token');
+          toast.error('Sign in failed');
           return;
         }
 
@@ -95,22 +112,24 @@ const AuthForm = ({ type }: { type: FormType }) => {
           idToken
         });
 
-        console.log("SignIn result:", result);
-
-        // Check if your signIn function returns a success property
+      
+       
         if (result && !result.success) {
-          toast.error(result.message || 'Sign in failed');
+          
+          toast.error(result.message || 'Sign in failed. please check credentails.');
           return;
         }
 
+         
         toast.success('Sign in successful.');
         console.log("About to navigate to /home");
         router.push('/home');
+
       }
     } catch (error: any) {
-      console.error("Auth error:", error);
-
-      // More specific error handling
+      console.log('error:', error);
+      toast.error(`There was an error: ${error.message || error}`)
+      
       let errorMessage = "An error occurred during authentication";
 
       if (error.code) {
@@ -139,6 +158,7 @@ const AuthForm = ({ type }: { type: FormType }) => {
 
       toast.error(errorMessage);
     } finally {
+      // This ensures the loading state is reset, regardless of success or falure.
       setIsLoading(false);
     }
   };
@@ -233,7 +253,7 @@ const AuthForm = ({ type }: { type: FormType }) => {
 
 export default AuthForm;
 
-// 'use client';
+// 'use client'; 
 
 // import { zodResolver } from "@hookform/resolvers/zod";
 // import { useForm } from "react-hook-form";
