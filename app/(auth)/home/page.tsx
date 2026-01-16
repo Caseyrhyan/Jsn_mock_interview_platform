@@ -75,7 +75,7 @@ const [userInterviews, latestInterviews] = await Promise.all([
               <InterviewCard interviewId={''} userId={''} role={''} type={''} techstack={[]} {...interview} key={interview.id} />
 
             )) ) : (
-            <p>There are no ne interviews availabe</p>
+            <p>There are no interviews availabe</p>
           )}
         </div>
       </section>

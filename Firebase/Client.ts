@@ -1,21 +1,24 @@
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+import { getAuth } from "firebase/auth";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
 
-import { initializeApp, getApp, getApps} from "firebase/app";
-import { getAuth } from 'firebase/auth';
-import {getFirestore} from 'firebase/firestore';
-
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-  apiKey: "AIzaSyDezK5qE13U1DKtpGjKimnNtEFi5MZ5dnA",
-  authDomain: "vocaprep-94f22.firebaseapp.com",
-  projectId: "vocaprep-94f22",
-  storageBucket: "vocaprep-94f22.firebasestorage.app",
-  messagingSenderId: "741683774021",
-  appId: "1:741683774021:web:08287727cd006455b5592c",
-  measurementId: "G-D6Z9QNVJWK"
-
+  apiKey: "AIzaSyCHUHHk2BKpbZlrTvgSt1YnUQcS1XcnNIk",
+  authDomain: "voca-prep-7f7fe.firebaseapp.com",
+  projectId: "voca-prep-7f7fe",
+  storageBucket: "voca-prep-7f7fe.firebasestorage.app",
+  messagingSenderId: "408923795548",
+  appId: "1:408923795548:web:6d11100739d9002973b699",
+  measurementId: "G-3TZBQB0J82"
 };
 
 // Initialize Firebase
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-
+// Initialize Firebase
+export const app = initializeApp(firebaseConfig);
+export const analytics = typeof window !== 'undefined' ? getAnalytics(app) : null;
 export const auth = getAuth(app);
-export const db = getFirestore(app)

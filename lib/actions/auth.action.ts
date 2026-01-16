@@ -1,6 +1,6 @@
 'use server';
 
-import { auth, db } from "@/Firebase/admin";
+import { auth, db } from "@/firebase/admin";
 import { cookies } from "next/headers";
 import { interview } from "./type/interview";
 
@@ -18,8 +18,8 @@ export async function signUp(params: signUpParams) {
     try {
         const userRecord = await db.collection('users').doc(uid).get();
 
-        if(userRecord.exists){
-            return{
+        if (userRecord.exists) {
+            return {
                 success: false,
                 message: 'User already exist. Please sign in instead.'
             }
@@ -29,14 +29,14 @@ export async function signUp(params: signUpParams) {
             username, email
         })
 
-        return{
+        return {
             success: true,
             message: 'Account created successfully, please sign in.'
         }
     } catch (e: any) {
         console.error('Error creating a user', e);
 
-        if(e.code === 'auth/email-already-exists') {
+        if (e.code === 'auth/email-already-exists') {
             return {
                 success: false,
                 message: 'This email is already in use. '
@@ -45,8 +45,8 @@ export async function signUp(params: signUpParams) {
     }
 
     return {
-    success: false,
-    message: 'Failed to create an account'
+        success: false,
+        message: 'Failed to create an account'
     }
 }
 // Define SignInParams type
@@ -62,30 +62,30 @@ type GetLatestInterviewsParams = {
 };
 
 export async function signIn(params: SignInParams) {
-  const { email, idToken } = params;
+    const { email, idToken } = params;
 
-  try {
-    const userRecord = await auth.getUserByEmail(email);
+    try {
+        const userRecord = await auth.getUserByEmail(email);
 
-    if (!userRecord) {
-      return {
-        success: false,
-        message: "User does not exist. Create an account instead",
-      };
+        if (!userRecord) {
+            return {
+                success: false,
+                message: "User does not exist. Create an account instead",
+            };
+        }
+
+        await setSessionCookie(idToken);
+
+        return {
+            success: true,
+        };
+    } catch (e) {
+        console.error(e);
+        return {
+            success: false,
+            message: "Failed to log into an account",
+        };
     }
-
-    await setSessionCookie(idToken);
-
-    return {
-      success: true,
-    };
-  } catch (e) {
-    console.error(e);
-    return {
-      success: false,
-      message: "Failed to log into an account",
-    };
-  }
 }
 
 
@@ -93,18 +93,18 @@ export async function signIn(params: SignInParams) {
 export async function setSessionCookie(idToken: string) {
     const cookiestore = await cookies();
 
-        const sessionCookie = await auth.createSessionCookie(idToken, {
-             expiresIn: ONE_WEEK * 1000,
-        });
+    const sessionCookie = await auth.createSessionCookie(idToken, {
+        expiresIn: ONE_WEEK * 1000,
+    });
 
-        cookiestore.set('session', sessionCookie, {
-            maxAge: ONE_WEEK,
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            path: '/',
-            sameSite: 'lax'
-        });
-    }
+    cookiestore.set('session', sessionCookie, {
+        maxAge: ONE_WEEK,
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        path: '/',
+        sameSite: 'lax'
+    });
+}
 
 
 
@@ -137,49 +137,57 @@ export async function getCurrentUser(): Promise<User | null> {
             ...userRecord.data(),
             id: userRecord.id,
         } as User;
-    } catch(e) {
+    } catch (e) {
         console.log(e)
 
         return null;
     }
 }
 
+export async function signOut() {
+    const cookieStore = await cookies();
+    cookieStore.delete('session');
+
+    return { success: true };
+}
+
 export async function isAuthenticated() {
     const user = await getCurrentUser();
 
-    return !!user; 
+    return !!user;
 }
 
 export async function getInterviewsByUserId(userId: string): Promise<interview[] | null> {
 
-  if(!userId) return null;
+    if (!userId) return null;
 
-        const interviews = await db
-            .collection('interviews')
-            .where('userId', '==', userId)
-            .orderBy('createdAt', 'desc')
-            .get();
+    const interviews = await db
+        .collection('interviews')
+        .where('userId', '==', userId)
+        .orderBy('createdAt', 'desc')
+        .get();
 
-        return interviews.docs.map((doc) => ({
-            id: doc.id,
-            ...doc.data()
-        })) as interview[];
+    return interviews.docs.map((doc) => ({
+        id: doc.id,
+        interviewId: doc.id, // Map for InterviewCard
+        ...doc.data()
+    })) as interview[];
 }
 
 
 export async function getLatestInterviews(params: GetLatestInterviewsParams): Promise<interview[] | null> {
-        const { userId, limit = 20} = params;
+    const { userId, limit = 20 } = params;
 
-        if(!userId) return null;
-        const interviews = await db
-            .collection('interviews')
-            .where('userId', '!=', userId)
-            .orderBy('createdAt', 'desc')
-            .limit(limit)
-            .get();
+    if (!userId) return null;
+    const interviews = await db
+        .collection('interviews')
+        .where('userId', '!=', userId)
+        .orderBy('createdAt', 'desc')
+        .limit(limit)
+        .get();
 
-        return interviews.docs.map((doc) => ({
-            id: doc.id,
-            ...doc.data()
-        })) as interview[];
+    return interviews.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data()
+    })) as interview[];
 }

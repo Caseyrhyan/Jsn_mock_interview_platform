@@ -20,7 +20,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { useRouter } from "next/navigation";
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "@/Firebase/Client";
+import { auth } from "@/firebase/client";
 import { signIn, signUp } from "@/lib/actions/auth.action";
 import { useState } from "react";
 
@@ -36,18 +36,18 @@ const AuthForm = ({ type }: { type: FormType }) => {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
 
-  // Create schema based on form type
-  const validationSchema = type === "sign-up" 
+
+  const validationSchema = type === "sign-up"
     ? z.object({
-        username: z.string().min(2, "Username must be at least 2 characters").max(50),
-        email: z.string().email({ message: "Enter a valid email" }),
-        password: z.string().min(6, { message: "Password must be at least 6 characters" }),
-      })
+      username: z.string().min(2, "Username must be at least 2 characters").max(50),
+      email: z.string().email({ message: "Enter a valid email" }),
+      password: z.string().min(6, { message: "Password must be at least 6 characters" }),
+    })
     : z.object({
-        username: z.string().optional(),
-        email: z.string().email({ message: "Enter a valid email" }),
-        password: z.string().min(6, { message: "Password must be at least 6 characters" }),
-      });
+      username: z.string().optional(),
+      email: z.string().email({ message: "Enter a valid email" }),
+      password: z.string().min(6, { message: "Password must be at least 6 characters" }),
+    });
 
   const form = useForm<z.infer<typeof validationSchema>>({
     resolver: zodResolver(validationSchema),
@@ -89,7 +89,7 @@ const AuthForm = ({ type }: { type: FormType }) => {
         router.push('/sign-in');
 
       } else {
-        console.log("Attempting sign in with:",{ email: values.email});
+        console.log("Attempting sign in with:", { email: values.email });
 
 
         const { email, password } = values;
@@ -112,24 +112,24 @@ const AuthForm = ({ type }: { type: FormType }) => {
           idToken
         });
 
-      
-       
+
+
         if (result && !result.success) {
-          
+
           toast.error(result.message || 'Sign in failed. please check credentails.');
           return;
         }
 
-         
+
         toast.success('Sign in successful.');
-        console.log("About to navigate to /home");
-        router.push('/home');
+        console.log("About to navigate to /");
+        router.push('/');
 
       }
     } catch (error: any) {
       console.log('error:', error);
       toast.error(`There was an error: ${error.message || error}`)
-      
+
       let errorMessage = "An error occurred during authentication";
 
       if (error.code) {
@@ -139,6 +139,9 @@ const AuthForm = ({ type }: { type: FormType }) => {
             break;
           case 'auth/wrong-password':
             errorMessage = "Incorrect password";
+            break;
+          case 'auth/invalid-credential':
+            errorMessage = "Invalid email or password";
             break;
           case 'auth/invalid-email':
             errorMessage = "Invalid email address";
@@ -175,6 +178,9 @@ const AuthForm = ({ type }: { type: FormType }) => {
         </div>
 
         <h3 className="text-lg text-center">Practice job interviews with AI</h3>
+        <h1 className="text-2xl font-bold text-center mt-4">
+          {isSignIn ? "Welcome Back" : "Create an Account"}
+        </h1>
 
         {/* Form */}
         <Form {...form}>
@@ -229,7 +235,7 @@ const AuthForm = ({ type }: { type: FormType }) => {
             {/* Submit Button */}
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading
-                ? (isSignIn ? "Signing in..." : "Creating account...") 
+                ? (isSignIn ? "Signing in..." : "Creating account...")
                 : (isSignIn ? "Sign In" : "Create an Account")
               }
             </Button>
@@ -253,7 +259,7 @@ const AuthForm = ({ type }: { type: FormType }) => {
 
 export default AuthForm;
 
-// 'use client'; 
+// 'use client';
 
 // import { zodResolver } from "@hookform/resolvers/zod";
 // import { useForm } from "react-hook-form";
