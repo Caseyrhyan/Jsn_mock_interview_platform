@@ -7,6 +7,11 @@ import React, { useEffect, useState } from 'react';
 import { vapi } from '@/lib/vapi.sdk';
 import { toast } from 'sonner';
 import { createInterview } from '@/lib/actions/interview.action';
+import { Trykker } from 'next/font/google';
+
+import { saveInterviewResult } from '@/lib/actions/interview.action';
+import { interviewer } from '@/public/constants';
+import { createFeedback } from '@/lib/actions/general.action';
 
 enum CallStatus {
     INACTIVE = 'INACTIVE',
@@ -19,6 +24,8 @@ type AgentProps = {
     userName: string;
     userId: string;
     type: string;
+    interviewId?: string;
+    questions?: string[];
 };
 
 interface SavedMessage {
@@ -26,7 +33,16 @@ interface SavedMessage {
     content: string;
 }
 
-const Agent = ({ userName, userId, type }: AgentProps) => {
+// Minimal type definition for Vapi Message to avoid import complexitiy errors
+type Message = {
+    type: string;
+    transcriptType?: string;
+    role: 'user' | 'system' | 'assistant';
+    transcript: string;
+    [key: string]: any; // Allow other properties
+};
+
+const Agent = ({ userName, userId, type, interviewId, questions }: AgentProps) => {
     const router = useRouter();
     const [isSpeaking, setIsSpeaking] = useState(false);
     const [callstatus, setCallStatus] = useState<CallStatus>(CallStatus.INACTIVE);
@@ -60,6 +76,7 @@ const Agent = ({ userName, userId, type }: AgentProps) => {
         vapi.on('call-end', onCalledEnd);
         vapi.on('speech-start', onSpeechStart);
         vapi.on('speech-end', onSpeechEnd);
+        vapi.on('message', onMessage); // Attached
         vapi.on('error', onError);
 
         return () => {
@@ -67,44 +84,82 @@ const Agent = ({ userName, userId, type }: AgentProps) => {
             vapi.off('call-end', onCalledEnd);
             vapi.off('speech-start', onSpeechStart);
             vapi.off('speech-end', onSpeechEnd);
+            vapi.off('message', onMessage); // Detached
             vapi.off('error', onError);
         }
     }, [])
 
+    const handleGenerateFeedback = async (messages: SavedMessage[]) => {
+        console.log('Generating feedback...');
+
+        // TODO: Create a server action that generates feedback
+        const { success, feedbackId: id } = await createFeedback({
+            interviewId: interviewId!,
+            userId: userId!,
+            transcript: messages
+        })
+
+
+        if (success && id) {
+            router.push(`/interview/${interviewId}/feedback`);
+        } else {
+            console.log('Error saving feedback');
+            router.push('/');
+        }
+    }
+
+
     useEffect(() => {
         if (callstatus === CallStatus.FINISHED) {
-            const saveInterviewData = async () => {
-                const interviewData = messages.reduce((acc, msg) => acc + `${msg.role}: ${msg.content}\n`, '');
-
-                await createInterview({
-                    userId,
-                    interviewData,
-                    questions: [], // You might want to parse this from the conversation later
-                    feedback: { strengths: [], improvements: [] }, // Placeholder
-                    rating: 0, // Placeholder
-                    role: "Software Engineer", // Default
-                    type: "Behavioral", // Default
-                    techStack: ["React", "Next.js", "Node.js"] // Default
-                });
-
-                router.push('/');
-            };
-
-            saveInterviewData();
+            if (type === 'generate') {
+                router.push('/')
+            } else {
+                handleGenerateFeedback(messages);
+            }
         }
-    }, [messages, callstatus, type, userId, router]);
+    }, [callstatus, type, userId, router]);
 
 
     const handleCall = async () => {
         setCallStatus(CallStatus.CONNECTING);
 
-        await vapi.start(process.env.NEXT_PUBLIC_VAPI_WORKFLOW_ID!, {
-            variableValues: {
-                username: userName,
-                userId: userId,
+        if (type === 'generate') {
+            try {
+                await vapi.start(process.env.NEXT_PUBLIC_VAPI_WORKFLOW_ID!, {
+                    variableValues: {
+                        username: userName,
+                        userId: userId,
+                    }
+                })
+            } catch (e) {
+                console.error("Vapi start error (generate):", e);
+                toast.error("Failed to start meeting: " + (e as Error).message);
             }
-        })
+        } else {
+            let formattedQuestions = '';
+
+            if (questions) {
+                formattedQuestions = questions
+                    .map((question) => {
+                        return '- ${question}';
+                    })
+                    .join('\n');
+            }
+
+            try {
+                await vapi.start(interviewer, {
+                    variableValues: {
+                        questions: formattedQuestions,
+                    }
+                })
+            } catch (e) {
+                console.error("Vapi start error (interviewer):", e);
+                toast.error("Failed to start meeting: " + (e as Error).message);
+            }
+        }
     }
+
+
 
     const handleDisconnect = async () => {
         setCallStatus(CallStatus.FINISHED);
@@ -131,7 +186,7 @@ const Agent = ({ userName, userId, type }: AgentProps) => {
                     <div className="card-content">
                         <Image src="/user-avatar.png" alt="user avatar"
                             width={540} height={540} className="rounded-full object-cover
-                size-[120px]" />
+            size-[120px]" />
                         <h3>{userName}</h3>
 
                     </div>
@@ -141,8 +196,7 @@ const Agent = ({ userName, userId, type }: AgentProps) => {
             {messages.length > 0 && (
                 <div className="transcript-border">
                     <div className="transcript">
-                        <p key={latestMessage} className="{cn
-('transition-opacity duraction-500 opacity-0', 'animate-fadeIn opacity-100')}">
+                        <p key={latestMessage} className={cn('transition-opacity duration-500 opacity-0', 'animate-fadeIn opacity-100')}>
                             {latestMessage}
                         </p>
 

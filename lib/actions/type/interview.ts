@@ -1,7 +1,18 @@
 export interface interview {
     id: string;
-    userid: string;
-    title: string;
-    createdAt: any;
-    [key :string]: any;
+    interviewId?: string;
+    userId: string;
+    title?: string;
+    description?: string;
+    date?: string;
+    role: string;
+    type: string;
+    techstack: string[];
+    rating?: number;
+    createdAt: string | Date;
+    questions?: any[];
+    feedback?: any;
+    status?: string;
+    level?: string;
+    finalized?: boolean;
 }

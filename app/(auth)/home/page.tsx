@@ -58,7 +58,7 @@ const [userInterviews, latestInterviews] = await Promise.all([
         <div className="interviews-section">
           {hasPastInterviews ? (
             userInterviews?.map((interview) => (
-              <InterviewCard interviewId={''} userId={''} role={''} type={''} techstack={[]} {...interview} key={interview.id} />
+              <InterviewCard {...interview} key={interview.id} />
             ))
           ) : (
             <p>You haven't taken any interviews yet</p>
@@ -72,8 +72,7 @@ const [userInterviews, latestInterviews] = await Promise.all([
         <div className="interviews-section">
           {hasUpcomingInterviews ? (
             latestInterviews?.map((interview) => (
-              <InterviewCard interviewId={''} userId={''} role={''} type={''} techstack={[]} {...interview} key={interview.id} />
-
+              <InterviewCard {...interview} key={interview.id} />
             )) ) : (
             <p>There are no interviews availabe</p>
           )}

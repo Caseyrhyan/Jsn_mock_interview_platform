@@ -1,6 +1,7 @@
 import InterviewCard from '@/components/interviewCard'
 import { Button } from '@/components/ui/button'
-import { getCurrentUser, getInterviewsByUserId } from '@/lib/actions/auth.action'
+import { getCurrentUser } from '@/lib/actions/auth.action'
+import { getInterviewsByUserId, getLatestInterviews } from "@/lib/actions/general.action";
 import Image from 'next/image'
 import Link from 'next/link'
 import React from 'react'
@@ -10,6 +11,8 @@ const Page = async () => {
   if (!user) return null; // Or handle empty state appropriately
 
   const interviews = await getInterviewsByUserId(user.id);
+  const latestInterviews = await getLatestInterviews({ userId: user.id });
+  const hasPastinterviews = interviews && interviews.length > 0;
 
   return (
     <>
@@ -32,9 +35,9 @@ const Page = async () => {
         <h2>Your Interviews</h2>
 
         <div className="interviews-section">
-          {interviews && interviews.length > 0 ? (
-            interviews.map((interview, index) => (
-              <InterviewCard {...interview} key={index} />
+          {hasPastinterviews ? (
+            interviews?.map((interview) => (
+              <InterviewCard {...interview} key={interview.id} />
             ))
           ) : (
             <p>You haven't taken any interviews yet</p>
@@ -44,12 +47,16 @@ const Page = async () => {
 
       <section className="flex flex-col gap-6 mt-8">
         <h2>Take an Interview</h2>
-        {/* Reusing existing component for now, or could list templates */}
-        <div className="interviews-section">
-          {/* Placeholder or template interviews could go here */}
-          <p>Start a new interview above!</p>
-        </div>
 
+        <div className="interviews-section">
+          {latestInterviews && latestInterviews.length > 0 ? (
+            latestInterviews.slice(0, 4).map((interview, index) => (
+              <InterviewCard {...interview} key={interview.id} />
+            ))
+          ) : (
+            <p className="text-gray-500">No public interviews available yet.</p>
+          )}
+        </div>
       </section>
     </>
   )

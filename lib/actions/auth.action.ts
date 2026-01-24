@@ -138,8 +138,10 @@ export async function getCurrentUser(): Promise<User | null> {
             id: userRecord.id,
         } as User;
     } catch (e) {
-        console.log(e)
-
+        console.error("Error verifying session cookie", e);
+        // If verification fails (e.g., token expired, revoked), clear the cookie so the user can re-login
+        // and doesn't get stuck in an error loop.
+        cookieStore.delete('session');
         return null;
     }
 }
