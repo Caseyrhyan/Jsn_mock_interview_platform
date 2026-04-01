@@ -1,35 +1,42 @@
-import { getCurrentUser } from '@/lib/actions/auth.action';
-import { getInterviewById } from '@/lib/actions/general.action';
-import { redirect } from 'next/navigation';
+import Agent from '@/components/Agent'
+import { getCurrentUser } from '@/lib/actions/auth.action'
+import { getInterviewById } from '@/lib/actions/general.action'
+import { redirect } from 'next/navigation'
 import React from 'react'
-import Agent from '@/components/Agent';
 
-type RouteParams = {
-    params: Promise<{ id: string }>
-}
+const Page = async ({ params }: { params: Promise<{ id: string }> }) => {
+    const user = await getCurrentUser()
+    if (!user) {
+        redirect('/sign-in')
+    }
 
-const Page = async ({ params }: RouteParams) => {
-    const { id } = await params;
-    const user = await getCurrentUser();
+    const resolvedParams = await params;
+    const interview = await getInterviewById(resolvedParams.id);
 
-    const interview = await getInterviewById(id);
-    if (!interview) redirect('/');
+    if (!interview) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[50vh]">
+                <h2 className="text-2xl font-bold">Interview not found</h2>
+                <p className="text-light-100 mt-2">The interview session could not be located.</p>
+            </div>
+        )
+    }
 
     return (
-        <section className="flex flex-col items-center justify-center min-h-[80vh] gap-10">
-            <div className="flex flex-col items-center gap-2">
-                <h1 className="text-3xl font-bold capitalize">{interview.role} Interview</h1>
-                <p className="text-gray-500 text-lg">Conduct your mock interview with our AI agent.</p>
+        <div className="w-full max-w-4xl mx-auto flex flex-col gap-6">
+            <div className="flex flex-col gap-2 mb-4">
+                <h3 className="text-2xl font-bold">Mock Interview: {interview.role} ({interview.level})</h3>
+                <p className="text-light-100">{interview.description}</p>
             </div>
 
-            <Agent
-                userName={user?.username || ''}
-                userId={user?.id || ''}
-                type="interviewer"
-                interviewId={id}
-                questions={interview.questions}
+            <Agent 
+                userName={user.username || 'unknown'} 
+                userId={user.id} 
+                type="interview" 
+                interviewId={resolvedParams.id} 
+                questions={interview.questions ? (interview.questions as any[]).map(q => typeof q === 'string' ? q : q.question) : []} 
             />
-        </section>
+        </div>
     )
 }
 

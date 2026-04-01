@@ -1,10 +1,11 @@
 'use server';
 
 import { db } from "@/firebase/admin";
-import { interview } from "./type/interview";
+
+
 import { revalidatePath } from "next/cache";
-import { google } from "@ai-sdk/google";
-import { generateObject } from "ai";
+import { aiModel } from "@/lib/ai-provider";
+import { generateText } from "ai";
 import { z } from "zod";
 
 type CreateInterviewParams = {
@@ -92,11 +93,17 @@ export async function saveInterviewResult(
             Rate the candidate on a scale of 1-10 based on technical accuracy and communication.
         `;
 
-        const { object } = await generateObject({
-            model: google('gemini-2.0-flash-001'),
-            schema: FeedbackSchema,
-            prompt: prompt,
+        const { text } = await generateText({
+            model: aiModel,
+            prompt: prompt + `\nReturn ONLY valid JSON matching this exact structure without any markdown formatting or extra text:
+{
+  "rating": 8,
+  "feedback": { "strengths": ["..."], "improvements": ["..."] },
+  "questions": [ { "question": "...", "answer": "..." } ]
+}`,
         });
+        const cleanJson = text.replace(/```json/g, '').replace(/```/g, '').trim();
+        const object = JSON.parse(cleanJson);
 
         // 3. Update the interview document
         const updateData = {
@@ -116,5 +123,66 @@ export async function saveInterviewResult(
     } catch (error) {
         console.error("Error saving interview result:", error);
         return { success: false, message: error instanceof Error ? error.message : "Failed to save result" };
+    }
+}
+
+const GeneratedQuestionsSchema = z.object({
+    questions: z.array(z.string())
+});
+
+export async function generateInterviewRoom(params: {
+    userId: string;
+    role: string;
+    level: string;
+    techStack: string;
+    jobDescription?: string;
+}) {
+    const { userId, role, level, techStack, jobDescription } = params;
+
+    try {
+        const prompt = `
+            You are an expert technical interviewer.
+            Generate 3 highly relevant and realistic interview questions for a candidate applying for the following role:
+            Role: ${role}
+            Experience Level: ${level}
+            Tech Stack: ${techStack}
+            ${jobDescription ? `Job Description:\n${jobDescription}` : ''}
+            
+            The questions should be challenging but appropriate for the specified experience level.
+            Return an array of the 3 questions as strings.
+        `;
+
+        const { text } = await generateText({
+            model: aiModel,
+            prompt: prompt + `\nReturn ONLY valid JSON matching this exact structure without any markdown formatting or extra text:
+{ "questions": ["Question 1", "Question 2", "Question 3"] }`,
+        });
+        const cleanJson = text.replace(/```json/g, '').replace(/```/g, '').trim();
+        const object = JSON.parse(cleanJson);
+
+        const interviewRef = db.collection('interviews').doc();
+
+        const newInterview = {
+            userId,
+            title: `${role} Mock Interview`,
+            description: `A ${level} level mock interview focusing on ${techStack}.`,
+            date: new Date().toISOString(),
+            questions: object.questions,
+            role,
+            level,
+            type: 'Technical',
+            techstack: techStack.split(',').map(s => s.trim()),
+            createdAt: new Date().toISOString(),
+            status: 'pending',
+            finalized: false
+        };
+
+        await interviewRef.set(newInterview);
+
+        revalidatePath('/'); 
+        return { success: true, id: interviewRef.id };
+    } catch (error) {
+        console.error("Error generating interview room:", error);
+        return { success: false, message: "Failed to generate interview room" };
     }
 }

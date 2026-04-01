@@ -11,19 +11,18 @@
 
 import InterviewCard from '@/components/interviewCard'
 import { Button } from '@/components/ui/button'
-import { getCurrentUser, getLatestInterviews } from '@/lib/actions/auth.action'
-import { getInterviewsByUserId } from '@/lib/actions/auth.action'
+import { getCurrentUser } from '@/lib/actions/auth.action'
+import { getInterviewsByUserId, getLatestInterviews } from '@/lib/actions/general.action'
 import Image from 'next/image'
 import Link from 'next/link'
 import React from 'react'
-import { interview } from '../../../lib/actions/type/interview';
 
 const page = async () => {
   const user = await getCurrentUser();
 
 const [userInterviews, latestInterviews] = await Promise.all([
-    await getInterviewsByUserId(user?.id!),
-    await getLatestInterviews({ userId: user?.id! })
+    await getInterviewsByUserId(user?.id as string),
+    await getLatestInterviews({ userId: user?.id as string })
   ]);
 
   const hasPastInterviews = (userInterviews?.length ?? 0) > 0;
@@ -61,7 +60,7 @@ const [userInterviews, latestInterviews] = await Promise.all([
               <InterviewCard {...interview} key={interview.id} />
             ))
           ) : (
-            <p>You haven't taken any interviews yet</p>
+            <p>You haven&apos;t taken any interviews yet</p>
           )}
         </div>
       </section>

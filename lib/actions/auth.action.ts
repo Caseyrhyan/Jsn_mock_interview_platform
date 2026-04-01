@@ -2,7 +2,7 @@
 
 import { auth, db } from "@/firebase/admin";
 import { cookies } from "next/headers";
-import { interview } from "./type/interview";
+
 
 type signUpParams = {
     uid: string;
@@ -33,10 +33,10 @@ export async function signUp(params: signUpParams) {
             success: true,
             message: 'Account created successfully, please sign in.'
         }
-    } catch (e: any) {
+    } catch (e: unknown) {
         console.error('Error creating a user', e);
 
-        if (e.code === 'auth/email-already-exists') {
+        if (e && typeof e === 'object' && 'code' in e && e.code === 'auth/email-already-exists') {
             return {
                 success: false,
                 message: 'This email is already in use. '
@@ -55,11 +55,7 @@ type SignInParams = {
     idToken: string;
 };
 
-// Define GetLatestInterviewsParams type
-type GetLatestInterviewsParams = {
-    userId: string;
-    limit?: number;
-};
+
 
 export async function signIn(params: SignInParams) {
     const { email, idToken } = params;
@@ -157,39 +153,4 @@ export async function isAuthenticated() {
     const user = await getCurrentUser();
 
     return !!user;
-}
-
-export async function getInterviewsByUserId(userId: string): Promise<interview[] | null> {
-
-    if (!userId) return null;
-
-    const interviews = await db
-        .collection('interviews')
-        .where('userId', '==', userId)
-        .orderBy('createdAt', 'desc')
-        .get();
-
-    return interviews.docs.map((doc) => ({
-        id: doc.id,
-        interviewId: doc.id, // Map for InterviewCard
-        ...doc.data()
-    })) as interview[];
-}
-
-
-export async function getLatestInterviews(params: GetLatestInterviewsParams): Promise<interview[] | null> {
-    const { userId, limit = 20 } = params;
-
-    if (!userId) return null;
-    const interviews = await db
-        .collection('interviews')
-        .where('userId', '!=', userId)
-        .orderBy('createdAt', 'desc')
-        .limit(limit)
-        .get();
-
-    return interviews.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data()
-    })) as interview[];
 }
