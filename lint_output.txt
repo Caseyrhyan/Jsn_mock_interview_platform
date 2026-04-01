@@ -1,0 +1,4 @@
+
+> jsn_mock_interview_platform@0.1.0 lint
+> next lint
+

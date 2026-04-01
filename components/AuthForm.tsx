@@ -6,12 +6,12 @@ import { z } from "zod";
 import Image from "next/image";
 import Link from "next/link";
 import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -26,11 +26,7 @@ import { useState } from "react";
 
 type FormType = "sign-in" | "sign-up";
 
-const formSchema = z.object({
-  username: z.string().min(2).max(50).optional(),
-  email: z.string().email({ message: "Enter a valid email" }),
-  password: z.string().min(6, { message: "Password must be at least 6 characters" }),
-});
+
 
 const AuthForm = ({ type }: { type: FormType }) => {
   const router = useRouter();
@@ -40,12 +36,12 @@ const AuthForm = ({ type }: { type: FormType }) => {
   const validationSchema = type === "sign-up"
     ? z.object({
       username: z.string().min(2, "Username must be at least 2 characters").max(50),
-      email: z.string().email({ message: "Enter a valid email" }),
+      email: z.string().trim().toLowerCase().email({ message: "Enter a valid email" }),
       password: z.string().min(6, { message: "Password must be at least 6 characters" }),
     })
     : z.object({
       username: z.string().optional(),
-      email: z.string().email({ message: "Enter a valid email" }),
+      email: z.string().trim().toLowerCase().email({ message: "Enter a valid email" }),
       password: z.string().min(6, { message: "Password must be at least 6 characters" }),
     });
 
@@ -126,14 +122,13 @@ const AuthForm = ({ type }: { type: FormType }) => {
         router.push('/');
 
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.log('error:', error);
-      toast.error(`There was an error: ${error.message || error}`)
 
       let errorMessage = "An error occurred during authentication";
 
-      if (error.code) {
-        switch (error.code) {
+      if (error && typeof error === 'object' && 'code' in error) {
+        switch ((error as any).code) {
           case 'auth/user-not-found':
             errorMessage = "No account found with this email";
             break;
@@ -153,9 +148,9 @@ const AuthForm = ({ type }: { type: FormType }) => {
             errorMessage = "Too many failed attempts. Please try again later";
             break;
           default:
-            errorMessage = error.message || errorMessage;
+            errorMessage = (error as any).message || errorMessage;
         }
-      } else {
+      } else if (error instanceof Error) {
         errorMessage = error.message || errorMessage;
       }
 
@@ -233,11 +228,15 @@ const AuthForm = ({ type }: { type: FormType }) => {
             />
 
             {/* Submit Button */}
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading
-                ? (isSignIn ? "Signing in..." : "Creating account...")
-                : (isSignIn ? "Sign In" : "Create an Account")
-              }
+            <Button type="submit" className="w-full relative group transition-transform duration-200 active:scale-95" disabled={isLoading}>
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {isSignIn ? "Signing in..." : "Creating account..."}
+                </>
+              ) : (
+                isSignIn ? "Sign In" : "Create an Account"
+              )}
             </Button>
           </form>
         </Form>

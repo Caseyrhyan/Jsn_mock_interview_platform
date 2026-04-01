@@ -17,15 +17,16 @@ export interface InterviewCardProps {
 }
 
 const InterviewCard = async ({ id, userId, role, type, techstack, createdAt }: InterviewCardProps) => {
-  const feedback = userId && id
+  const feedbackData = userId && id
   ? await getFeedbackByInterviewId({ interviewId: id, userId})
     : null;
+  const feedback = feedbackData?.[0] || null;
   const normalizedType = /mix/gi.test(type) ? 'mixed' : type;
   const formattedDate = dayjs(feedback?.createdAt || createdAt || Date.now()).format('MMM D, YYYY');
 
 
   return (
-    <div className="card-border w-[360px] max-sm:w-full min-h-96">
+    <div className="card-border w-[360px] max-sm:w-full min-h-96 hover:-translate-y-1 hover:shadow-xl transition-all duration-300">
       <div className="card-interview">
         <div>
           <div className="absolute top-0 right-0 w-fit px-4
@@ -33,8 +34,7 @@ const InterviewCard = async ({ id, userId, role, type, techstack, createdAt }: I
             <p className="badge-text">{normalizedType}</p>
           </div>
 
-          <Image src={getRandomInterviewCover()} alt="cover 
-            image" width={90} height={90} className="rounded-full object-fit size-[90px]" />
+          <Image src={getRandomInterviewCover()} alt="cover image" width={90} height={90} className="rounded-full object-cover size-[90px]" />
 
           <h3 className="mt-5 capitalize">
             {role} Interview
@@ -66,8 +66,8 @@ const InterviewCard = async ({ id, userId, role, type, techstack, createdAt }: I
             <Link
               href={
                 feedback
-                  ? '/interview/${id}/feedback'
-                  : '/interview/${id}'
+                  ? `/interview/${id}/feedback`
+                  : `/interview/${id}`
               }>
               {feedback ? 'check Feedback' : 'view Interview'}
             </Link>
