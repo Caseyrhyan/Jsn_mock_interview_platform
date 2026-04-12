@@ -140,17 +140,41 @@ export async function generateInterviewRoom(params: {
     const { userId, role, level, techStack, jobDescription } = params;
 
     try {
-        const prompt = `
-            You are an expert technical interviewer.
-            Generate 3 highly relevant and realistic interview questions for a candidate applying for the following role:
-            Role: ${role}
-            Experience Level: ${level}
-            Tech Stack: ${techStack}
-            ${jobDescription ? `Job Description:\n${jobDescription}` : ''}
+        // const prompt = `
+        //     You are an expert technical interviewer.
+        //     Generate 3 highly relevant and realistic interview questions for a candidate applying for the following role:
+        //     Role: ${role}
+        //     Experience Level: ${level}
+        //     Tech Stack: ${techStack}
+        //     ${jobDescription ? `Job Description:\n${jobDescription}` : ''}
             
-            The questions should be challenging but appropriate for the specified experience level.
-            Return an array of the 3 questions as strings.
-        `;
+        //     The questions should be challenging but appropriate for the specified experience level.
+        //     Return an array of the 3 questions as strings.
+        // `;
+
+        const prompt = `
+    You are a friendly technical interviewer for beginner-level candidates.
+    Generate 5 VERY SIMPLE, beginner-friendly interview questions for:
+    Role: ${role}
+    Experience Level: ${level}
+    Tech Stack: ${techStack}
+    ${jobDescription ? `Job Description:\n${jobDescription}` : ''}
+    
+    The questions must be extremely basic. Examples of the KIND of questions to ask:
+    - "What is HTML?"
+    - "What does CSS stand for?"
+    - "What is a variable in JavaScript?"
+    - "What is React used for?"
+    - "What is the difference between == and === in JavaScript?"
+    - "What is a function in programming?"
+    - "What does the <div> tag do in HTML?"
+    - "What is Next.js?"
+    - "What is Tailwind CSS?"
+    - "What is a component in React?"
+    
+    Keep ALL questions at this simple level. Do NOT ask hard algorithmic, system design, or complex questions.
+    Return an array of exactly 5 questions as strings.
+`;
 
         const { text } = await generateText({
             model: aiModel,
